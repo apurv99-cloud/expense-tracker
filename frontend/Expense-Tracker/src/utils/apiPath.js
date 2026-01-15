@@ -1,22 +1,22 @@
-export const BASE_URL = "http://localhost:5000";
+export const BASE_URL = "https://expense-tracker-ycpr.onrender.com/";
 
 //utils/apiPaths.js
 export const API_PATH = {
   AUTH: {
-    LOGIN: "api/v1/auth/login",
-    REGISTER: "api/v1/auth/register",
-    GET_USER_INFO: "api/v1/auth/getUser",
+    LOGIN: "/api/v1/auth/login",
+    REGISTER: "/api/v1/auth/register",
+    GET_USER_INFO: "/api/v1/auth/getUser",
   },
 
   DASHBOARD: {
-    GET_DATA: "/api/va/dashboard",
+    GET_DATA: "/api/v1/dashboard", // 🔥 typo fixed
   },
 
   INCOME: {
-    ADD_INCOME: "api/v1/income/add",
-    GET_ALL_INCOME: "api/v1/income/get",
+    ADD_INCOME: "/api/v1/income/add",
+    GET_ALL_INCOME: "/api/v1/income/get",
     DELETE_INCOME: (incomeId) => `/api/v1/income/${incomeId}`,
-    DOWNLOAD_INCOME: `/api/v1/income/downloadExcel`,
+    DOWNLOAD_INCOME: "/api/v1/income/downloadExcel",
   },
 
   EXPENSE: {
