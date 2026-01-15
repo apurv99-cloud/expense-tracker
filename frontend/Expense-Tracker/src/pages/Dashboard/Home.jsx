@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import SummaryCard from "../../components/SummaryCard";
 import TransactionItem from "../../components/TransactionItem";
 import axiosInstance from "../../utils/axiosInstance";
@@ -29,22 +29,27 @@ const COLORS = ["#875cf5", "#22c55e", "#facc15", "#ef4444", "#06b6d4"];
 const Home = () => {
   const [income, setIncome] = useState([]);
   const [expense, setExpense] = useState([]);
+  const [refresh, setRefresh] = useState(false); // 🔥 KEY
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [incRes, expRes] = await Promise.all([
-          axiosInstance.get(API_PATH.INCOME.GET_ALL_INCOME),
-          axiosInstance.get(API_PATH.EXPENSE.GET_ALL_EXPENSE),
-        ]);
-        setIncome(incRes.data.data || incRes.data || []);
-        setExpense(expRes.data.data || expRes.data || []);
-      } catch (err) {
-        console.error(err);
-      }
-    };
-    fetchData();
+  // 🔥 Stable fetch function
+  const fetchData = useCallback(async () => {
+    try {
+      const [incRes, expRes] = await Promise.all([
+        axiosInstance.get(API_PATH.INCOME.GET_ALL_INCOME),
+        axiosInstance.get(API_PATH.EXPENSE.GET_ALL_EXPENSE),
+      ]);
+
+      setIncome(incRes.data.data || incRes.data || []);
+      setExpense(expRes.data.data || expRes.data || []);
+    } catch (err) {
+      console.error(err);
+    }
   }, []);
+
+  // 🔥 Re-fetch when refresh changes
+  useEffect(() => {
+    fetchData();
+  }, [fetchData, refresh]);
 
   const total = (list) =>
     list.reduce((sum, i) => sum + Number(i.amount || 0), 0);
@@ -53,17 +58,19 @@ const Home = () => {
   const totalExpense = total(expense);
   const balance = totalIncome - totalExpense;
 
-  // Category aggregation
-  const catMap = {};
-  expense.forEach((e) => {
-    const c = e.category || "Other";
-    catMap[c] = (catMap[c] || 0) + Number(e.amount || 0);
-  });
+  // 🔥 Memoized category aggregation (better performance)
+  const pieData = useMemo(() => {
+    const catMap = {};
+    expense.forEach((e) => {
+      const c = e.category || "Other";
+      catMap[c] = (catMap[c] || 0) + Number(e.amount || 0);
+    });
 
-  const pieData = Object.keys(catMap).map((k) => ({
-    name: k,
-    value: catMap[k],
-  }));
+    return Object.keys(catMap).map((k) => ({
+      name: k,
+      value: catMap[k],
+    }));
+  }, [expense]);
 
   return (
     <>
@@ -74,14 +81,12 @@ const Home = () => {
         <SummaryCard
           title="Total Income"
           amount={totalIncome}
-          change={5}
           icon={<FaArrowUp />}
           color="green"
         />
         <SummaryCard
           title="Total Expense"
           amount={totalExpense}
-          change={-2}
           icon={<FaArrowDown />}
           color="red"
         />
@@ -127,16 +132,22 @@ const Home = () => {
           </h3>
 
           <div className="h-[260px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie data={pieData} dataKey="value" outerRadius={90}>
-                  {pieData.map((_, i) => (
-                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
+            {pieData.length === 0 ? (
+              <p className="text-gray-400 text-sm text-center mt-20">
+                No expense data
+              </p>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={pieData} dataKey="value" outerRadius={90} label>
+                    {pieData.map((_, i) => (
+                      <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
       </div>
@@ -150,7 +161,11 @@ const Home = () => {
 
         <div className="grid gap-3">
           {[...income, ...expense].slice(0, 6).map((t) => (
-            <TransactionItem key={t._id} t={t} />
+            <TransactionItem
+              key={t._id}
+              t={t}
+              onChange={() => setRefresh((p) => !p)} // 🔥 IMPORTANT
+            />
           ))}
         </div>
       </div>
