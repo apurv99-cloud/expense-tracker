@@ -1,0 +1,12 @@
+# node
+node_modules
+.env
+.env.local
+
+# build
+dist
+target
+
+# IDE
+.vscode
+.idea
