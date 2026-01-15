@@ -56,7 +56,7 @@ const Signup = () => {
       };
 
       const res = await axiosInstance.post(
-        "http://localhost:5000/api/v1/auth/register",
+        "https://expense-tracker-ycpr.onrender.com/api/v1/auth/register",
         payload
       );
 
